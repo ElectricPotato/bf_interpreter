@@ -11,12 +11,12 @@ module bf_machine #(
     input logic rst,
 
     input  logic [WORD_SIZE-1:0] machine_input,
-    //input  logic machine_input_valid,//TODO
-    output  logic machine_input_ready,
+    input  logic machine_input_valid,
+    output logic machine_input_ready,
 
     output logic [WORD_SIZE-1:0] machine_output,
-    output logic machine_output_valid
-    //input logic machine_output_ready //TODO
+    output logic machine_output_valid,
+    input  logic machine_output_ready
 );
     typedef enum bit [2:0] {
         INSTR_P = 0, //+ plus
@@ -58,6 +58,8 @@ module bf_machine #(
     logic [$clog2(PROGRAM_LENGTH)-1:0] program_pointer;
     logic [$clog2(MAX_DEPTH + 1)-1:0]  program_depth;
 
+    logic advance_program_pointer;
+
     always@(posedge clk) begin
         machine_output_valid = 0;
         machine_output = 0;
@@ -71,6 +73,7 @@ module bf_machine #(
             program_pointer = 0;
             program_depth = 0;
         end else if(sm_state == STATE_RUNNING) begin
+            advance_program_pointer = 1;
             case (machine_program[program_pointer])
                 INSTR_P: tape[tape_pointer] += 1; //+
                 INSTR_M: tape[tape_pointer] -= 1; //-
@@ -79,10 +82,12 @@ module bf_machine #(
                 INSTR_O: begin //.
                     machine_output = tape[tape_pointer];
                     machine_output_valid = 1;
+                    if(!machine_output_ready) advance_program_pointer = 0; //stall
                 end
                 INSTR_I: begin //,
                     tape[tape_pointer] = machine_input;
                     machine_input_ready = 1;
+                    if(!machine_input_valid) advance_program_pointer = 0; //stall
                 end
                 INSTR_J: //[
                     if(!tape[tape_pointer]) begin
@@ -92,11 +97,13 @@ module bf_machine #(
                 INSTR_K: //]
                     if(tape[tape_pointer]) begin
                         program_depth = 1;
-                        program_pointer -= 1;
+                        advance_program_pointer = 0;
                         sm_state = STATE_SEARCH_L;
                     end
             endcase
-            program_pointer += 1;
+
+            if(advance_program_pointer) program_pointer += 1;
+
         end else if(sm_state == STATE_SEARCH_R) begin
             if(program_depth) begin
                 if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth -= 1;

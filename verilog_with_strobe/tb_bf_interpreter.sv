@@ -30,12 +30,12 @@ module test;
       .rst,
 
       .machine_input,
-      //.machine_input_valid,
+      .machine_input_valid,
       .machine_input_ready,
 
       .machine_output,
       .machine_output_valid,
-      //.machine_output_ready
+      .machine_output_ready
   );
 
 
@@ -56,14 +56,15 @@ module test;
     
     machine_input = 0;
     machine_input_valid = 0;
+    machine_output_ready = 0;
 
     rst = 1;
     #(PERIOD*2);
     rst = 0;
 
-    sendInputAndWait(3);
-    sendInputAndWait(9);
-    sendInputAndWait(5);
+    sendInputWhenReady(3);
+    sendInputWhenReady(9);
+    sendInputWhenReady(5);
 
     #(PERIOD*20);
     $finish;
@@ -72,26 +73,28 @@ module test;
   always@(posedge clk) begin
     if(machine_output_valid) begin
       $display("output:%d\n", machine_output);
+
+      #(PERIOD*3); //wait 3 cycles to test the stall
+      
+      machine_output_ready = 1;
+      #(PERIOD);
+      machine_output_ready = 0;
     end
   end
 
-  task sendInput(t_word word);
-    machine_input = word;
-    machine_input_valid = 1;
-    #(PERIOD);
-    machine_input = 0;
-    machine_input_valid = 0;
-  endtask
-
-  task sendInputAndWait(t_word word);
-    machine_input = word;
-    machine_input_valid = 1;
+  task sendInputWhenReady(t_word word);
     while(1) begin
       @(posedge clk);
       if(machine_input_ready) begin
         break;
       end
     end
+    
+    #(PERIOD*3); //wait 3 cycles to test the stall
+
+    machine_input = word;
+    machine_input_valid = 1;
+    #(PERIOD);
     machine_input = 0;
     machine_input_valid = 0;
   endtask
