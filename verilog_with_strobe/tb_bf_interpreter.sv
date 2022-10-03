@@ -69,16 +69,23 @@ module test;
     #(PERIOD*20);
     $finish;
   end
+  
+  initial begin
+    while(1) begin
+      @(posedge clk);
+      if(machine_output_valid) begin
+        $display("output:%d\n", machine_output);
 
-  always@(posedge clk) begin
-    if(machine_output_valid) begin
-      $display("output:%d\n", machine_output);
-
-      #(PERIOD*3); //wait 3 cycles to test the stall
+        @(posedge clk); //wait N cycles to test the stall
+        @(posedge clk);
       
-      machine_output_ready = 1;
-      #(PERIOD);
-      machine_output_ready = 0;
+        machine_output_ready = 1;
+        @(posedge clk);
+        machine_output_ready = 0;
+        
+        @(posedge clk); //wait an extra few cycles to avoid retriggering
+        @(posedge clk);
+      end
     end
   end
 
@@ -86,17 +93,23 @@ module test;
     while(1) begin
       @(posedge clk);
       if(machine_input_ready) begin
+        
+        @(posedge clk); //wait N cycles to test the stall
+        @(posedge clk);
+
+        machine_input = word;
+        machine_input_valid = 1;
+        @(posedge clk);
+        machine_input = 0;
+        machine_input_valid = 0;
+        
+        @(posedge clk); //wait an extra few cycles to avoid retriggering
+        @(posedge clk);
+        
         break;
       end
     end
-    
-    #(PERIOD*3); //wait 3 cycles to test the stall
 
-    machine_input = word;
-    machine_input_valid = 1;
-    #(PERIOD);
-    machine_input = 0;
-    machine_input_valid = 0;
   endtask
 endmodule
 
