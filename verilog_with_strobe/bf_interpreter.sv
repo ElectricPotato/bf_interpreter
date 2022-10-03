@@ -45,10 +45,13 @@ module bf_machine #(
     assign machine_program[7]  = INSTR_P;
     assign machine_program[8]  = INSTR_K;
 
-    typedef enum bit [1:0] {
+    typedef enum bit [2:0] {
         STATE_RUNNING,  //executing as normal
         STATE_SEARCH_L, //traversing the program left (backwards) to find the matching bracket
-        STATE_SEARCH_R  //traversing the program right (forwards) to find the matching bracket
+        STATE_SEARCH_R, //traversing the program right (forwards) to find the matching bracket
+
+        STATE_STALL_OUTPUT, //wait until output is ready to accept this machine's output
+        STATE_STALL_INPUT   //wait until input is valid
     } t_sm_state;
 
     t_sm_state sm_state;
@@ -72,53 +75,83 @@ module bf_machine #(
             tape_pointer = 0;
             program_pointer = 0;
             program_depth = 0;
-        end else if(sm_state == STATE_RUNNING) begin
-            advance_program_pointer = 1;
-            case (machine_program[program_pointer])
-                INSTR_P: tape[tape_pointer] += 1; //+
-                INSTR_M: tape[tape_pointer] -= 1; //-
-                INSTR_R: tape_pointer += 1; //>
-                INSTR_L: tape_pointer -= 1; //<
-                INSTR_O: begin //.
+        end else begin
+
+            //advance program pointer if the input/output was made available last cycle, otherwise keep stalling
+            if(sm_state == STATE_STALL_OUTPUT) begin
+                if(machine_output_ready) begin
+                    sm_state = STATE_RUNNING;
+                    program_pointer += 1;
+                end else begin
                     machine_output = tape[tape_pointer];
                     machine_output_valid = 1;
-                    if(!machine_output_ready) advance_program_pointer = 0; //stall
+                    advance_program_pointer = 0;
                 end
-                INSTR_I: begin //,
+            end else if(sm_state == STATE_STALL_INPUT) begin
+                if(machine_input_valid) begin
+                    sm_state = STATE_RUNNING;
+                    program_pointer += 1;
+                end else begin
                     tape[tape_pointer] = machine_input;
                     machine_input_ready = 1;
-                    if(!machine_input_valid) advance_program_pointer = 0; //stall
+                    advance_program_pointer = 0;
                 end
-                INSTR_J: //[
-                    if(!tape[tape_pointer]) begin
-                        program_depth = 1;
-                        sm_state = STATE_SEARCH_R;
-                    end
-                INSTR_K: //]
-                    if(tape[tape_pointer]) begin
-                        program_depth = 1;
-                        advance_program_pointer = 0;
-                        sm_state = STATE_SEARCH_L;
-                    end
-            endcase
-
-            if(advance_program_pointer) program_pointer += 1;
-
-        end else if(sm_state == STATE_SEARCH_R) begin
-            if(program_depth) begin
-                if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth -= 1;
-                if(machine_program[program_pointer] == INSTR_J /* [ */) program_depth += 1;
-                program_pointer += 1;
-            end else begin
-                sm_state = STATE_RUNNING;
             end
-        end else if(sm_state == STATE_SEARCH_L) begin
-            if(program_depth) begin
-                program_pointer -= 1;
-                if(machine_program[program_pointer] == INSTR_J /* [ */) program_depth -= 1;
-                if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth += 1;
-            end else begin
-                sm_state = STATE_RUNNING;
+
+            if(sm_state == STATE_RUNNING) begin
+                advance_program_pointer = 1;
+                case (machine_program[program_pointer])
+                    INSTR_P: tape[tape_pointer] += 1; //+
+                    INSTR_M: tape[tape_pointer] -= 1; //-
+                    INSTR_R: tape_pointer += 1; //>
+                    INSTR_L: tape_pointer -= 1; //<
+                    INSTR_O: begin //.
+                        machine_output = tape[tape_pointer];
+                        machine_output_valid = 1;
+                        if(!machine_output_ready) begin
+                            advance_program_pointer = 0; //stall
+                            sm_state = STATE_STALL_OUTPUT;
+                        end
+                    end
+                    INSTR_I: begin //,
+                        tape[tape_pointer] = machine_input;
+                        machine_input_ready = 1;
+                        if(!machine_input_valid) begin
+                            advance_program_pointer = 0; //stall
+                            sm_state = STATE_STALL_INPUT;
+                        end
+                    end
+                    INSTR_J: //[
+                        if(!tape[tape_pointer]) begin
+                            program_depth = 1;
+                            sm_state = STATE_SEARCH_R;
+                        end
+                    INSTR_K: //]
+                        if(tape[tape_pointer]) begin
+                            program_depth = 1;
+                            advance_program_pointer = 0;
+                            sm_state = STATE_SEARCH_L;
+                        end
+                endcase
+
+                if(advance_program_pointer) program_pointer += 1;
+
+            end else if(sm_state == STATE_SEARCH_R) begin
+                if(program_depth) begin
+                    if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth -= 1;
+                    if(machine_program[program_pointer] == INSTR_J /* [ */) program_depth += 1;
+                    program_pointer += 1;
+                end else begin
+                    sm_state = STATE_RUNNING;
+                end
+            end else if(sm_state == STATE_SEARCH_L) begin
+                if(program_depth) begin
+                    program_pointer -= 1;
+                    if(machine_program[program_pointer] == INSTR_J /* [ */) program_depth -= 1;
+                    if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth += 1;
+                end else begin
+                    sm_state = STATE_RUNNING;
+                end
             end
         end
     end

@@ -76,8 +76,8 @@ module test;
       if(machine_output_valid) begin
         $display("output:%d\n", machine_output);
 
-        @(posedge clk); //wait N cycles to test the stall
-        @(posedge clk);
+        //@(posedge clk); //wait N cycles to test the stall
+        //@(posedge clk);
       
         machine_output_ready = 1;
         @(posedge clk);
@@ -94,8 +94,8 @@ module test;
       @(posedge clk);
       if(machine_input_ready) begin
         
-        @(posedge clk); //wait N cycles to test the stall
-        @(posedge clk);
+        //@(posedge clk); //wait N cycles to test the stall
+        //@(posedge clk);
 
         machine_input = word;
         machine_input_valid = 1;
