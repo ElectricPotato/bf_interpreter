@@ -85,16 +85,14 @@ module bf_machine #(
                 end else begin
                     machine_output = tape[tape_pointer];
                     machine_output_valid = 1;
-                    advance_program_pointer = 0;
                 end
             end else if(sm_state == STATE_STALL_INPUT) begin
                 if(machine_input_valid) begin
                     sm_state = STATE_RUNNING;
                     program_pointer += 1;
-                end else begin
                     tape[tape_pointer] = machine_input;
+                end else begin
                     machine_input_ready = 1;
-                    advance_program_pointer = 0;
                 end
             end
 
@@ -114,11 +112,12 @@ module bf_machine #(
                         end
                     end
                     INSTR_I: begin //,
-                        tape[tape_pointer] = machine_input;
                         machine_input_ready = 1;
                         if(!machine_input_valid) begin
                             advance_program_pointer = 0; //stall
                             sm_state = STATE_STALL_INPUT;
+                        end else begin
+                            tape[tape_pointer] = machine_input;
                         end
                     end
                     INSTR_J: //[
