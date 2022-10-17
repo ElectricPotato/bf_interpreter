@@ -69,25 +69,25 @@ module bf_machine #(
 
         machine_input_ready = 0;
 
-        if(rst) begin
+        if (rst) begin
             sm_state = STATE_RUNNING;
-          	tape = '{default:'0}; //set the whole tape to 0
+            tape = '{default:'0}; //set the whole tape to 0
             tape_pointer = 0;
             program_pointer = 0;
             program_depth = 0;
         end else begin
 
             //advance program pointer if the input/output was made available last cycle, otherwise keep stalling
-            if(sm_state == STATE_STALL_OUTPUT) begin
-                if(machine_output_ready) begin
+            if (sm_state == STATE_STALL_OUTPUT) begin
+                if (machine_output_ready) begin
                     sm_state = STATE_RUNNING;
                     program_pointer += 1;
                 end else begin
                     machine_output = tape[tape_pointer];
                     machine_output_valid = 1;
                 end
-            end else if(sm_state == STATE_STALL_INPUT) begin
-                if(machine_input_valid) begin
+            end else if (sm_state == STATE_STALL_INPUT) begin
+                if (machine_input_valid) begin
                     sm_state = STATE_RUNNING;
                     program_pointer += 1;
                     tape[tape_pointer] = machine_input;
@@ -96,7 +96,7 @@ module bf_machine #(
                 end
             end
 
-            if(sm_state == STATE_RUNNING) begin
+            if (sm_state == STATE_RUNNING) begin
                 advance_program_pointer = 1;
                 case (machine_program[program_pointer])
                     INSTR_P: tape[tape_pointer] += 1; //+
@@ -106,14 +106,14 @@ module bf_machine #(
                     INSTR_O: begin //.
                         machine_output = tape[tape_pointer];
                         machine_output_valid = 1;
-                        if(!machine_output_ready) begin
+                        if (!machine_output_ready) begin
                             advance_program_pointer = 0; //stall
                             sm_state = STATE_STALL_OUTPUT;
                         end
                     end
                     INSTR_I: begin //,
                         machine_input_ready = 1;
-                        if(!machine_input_valid) begin
+                        if (!machine_input_valid) begin
                             advance_program_pointer = 0; //stall
                             sm_state = STATE_STALL_INPUT;
                         end else begin
@@ -121,33 +121,37 @@ module bf_machine #(
                         end
                     end
                     INSTR_J: //[
-                        if(!tape[tape_pointer]) begin
+                        if (!tape[tape_pointer]) begin
                             program_depth = 1;
                             sm_state = STATE_SEARCH_R;
                         end
                     INSTR_K: //]
-                        if(tape[tape_pointer]) begin
+                        if (tape[tape_pointer]) begin
                             program_depth = 1;
                             advance_program_pointer = 0;
                             sm_state = STATE_SEARCH_L;
                         end
+                    default:
+                        begin
+                            //Nothing
+                        end
                 endcase
 
-                if(advance_program_pointer) program_pointer += 1;
+                if (advance_program_pointer) program_pointer += 1;
 
-            end else if(sm_state == STATE_SEARCH_R) begin
-                if(program_depth) begin
-                    if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth -= 1;
-                    if(machine_program[program_pointer] == INSTR_J /* [ */) program_depth += 1;
+            end else if (sm_state == STATE_SEARCH_R) begin
+                if (program_depth) begin
+                    if (machine_program[program_pointer] == INSTR_K /* ] */) program_depth -= 1;
+                    if (machine_program[program_pointer] == INSTR_J /* [ */) program_depth += 1;
                     program_pointer += 1;
                 end else begin
                     sm_state = STATE_RUNNING;
                 end
-            end else if(sm_state == STATE_SEARCH_L) begin
-                if(program_depth) begin
+            end else if (sm_state == STATE_SEARCH_L) begin
+                if (program_depth) begin
                     program_pointer -= 1;
-                    if(machine_program[program_pointer] == INSTR_J /* [ */) program_depth -= 1;
-                    if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth += 1;
+                    if (machine_program[program_pointer] == INSTR_J /* [ */) program_depth -= 1;
+                    if (machine_program[program_pointer] == INSTR_K /* ] */) program_depth += 1;
                 end else begin
                     sm_state = STATE_RUNNING;
                 end
