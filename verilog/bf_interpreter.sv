@@ -1,3 +1,5 @@
+`default_nettype none
+
 //verilog brainfuck interpreter
 
 
@@ -64,13 +66,13 @@ module bf_machine #(
 
         machine_input_ready = 0;
 
-        if(rst) begin
+        if (rst) begin
             sm_state = STATE_RUNNING;
-          	tape = '{default:'0}; //set the whole tape to 0
+            tape = '{default:'0}; //set the whole tape to 0
             tape_pointer = 0;
             program_pointer = 0;
             program_depth = 0;
-        end else if(sm_state == STATE_RUNNING) begin
+        end else if (sm_state == STATE_RUNNING) begin
             case (machine_program[program_pointer])
                 INSTR_P: tape[tape_pointer] += 1; //+
                 INSTR_M: tape[tape_pointer] -= 1; //-
@@ -85,31 +87,32 @@ module bf_machine #(
                     machine_input_ready = 1;
                 end
                 INSTR_J: //[
-                    if(!tape[tape_pointer]) begin
+                    if (!tape[tape_pointer]) begin
                         program_depth = 1;
                         sm_state = STATE_SEARCH_R;
                     end
                 INSTR_K: //]
-                    if(tape[tape_pointer]) begin
+                    if (tape[tape_pointer]) begin
                         program_depth = 1;
                         program_pointer -= 1;
                         sm_state = STATE_SEARCH_L;
                     end
+                default: begin end
             endcase
             program_pointer += 1;
-        end else if(sm_state == STATE_SEARCH_R) begin
-            if(program_depth) begin
-                if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth -= 1;
-                if(machine_program[program_pointer] == INSTR_J /* [ */) program_depth += 1;
+        end else if (sm_state == STATE_SEARCH_R) begin
+            if (program_depth) begin
+                if (machine_program[program_pointer] == INSTR_K /* ] */) program_depth -= 1;
+                if (machine_program[program_pointer] == INSTR_J /* [ */) program_depth += 1;
                 program_pointer += 1;
             end else begin
                 sm_state = STATE_RUNNING;
             end
-        end else if(sm_state == STATE_SEARCH_L) begin
-            if(program_depth) begin
+        end else if (sm_state == STATE_SEARCH_L) begin
+            if (program_depth) begin
                 program_pointer -= 1;
-                if(machine_program[program_pointer] == INSTR_J /* [ */) program_depth -= 1;
-                if(machine_program[program_pointer] == INSTR_K /* ] */) program_depth += 1;
+                if (machine_program[program_pointer] == INSTR_J /* [ */) program_depth -= 1;
+                if (machine_program[program_pointer] == INSTR_K /* ] */) program_depth += 1;
             end else begin
                 sm_state = STATE_RUNNING;
             end

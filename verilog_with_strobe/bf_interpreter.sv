@@ -1,22 +1,31 @@
+`default_nettype none
+
 //verilog brainfuck interpreter
+//TODO: integrate this into a larger system
+//expose i_machine_input_valid as a pin, alternatively,
+//   make the input instruction take two bytes over SPI - one for if the input is ready one for the data byte
+//this will be driven by an arduino uno 
+//
+//SCK, MOSI, MISO,
+//CS0 for memory, CS1 for output, CS2 for input
 
 
-module bf_machine #(
+module mod_bf_machine #(
     TAPE_LENGTH = 256,
     WORD_SIZE = 8,
     PROGRAM_LENGTH = 9, //infer from program somehow?
     MAX_DEPTH = 15
 ) (
-    input logic clk,
-    input logic rst,
+    input logic i_clk,
+    input logic i_rst,
 
-    input  logic [WORD_SIZE-1:0] machine_input,
-    input  logic machine_input_valid,
-    output logic machine_input_ready,
+    input  logic [WORD_SIZE-1:0] i_machine_input,
+    input  logic i_machine_input_valid,
+    output logic o_machine_input_ready,
 
-    output logic [WORD_SIZE-1:0] machine_output,
-    output logic machine_output_valid,
-    input  logic machine_output_ready
+    output logic [WORD_SIZE-1:0] o_machine_output,
+    output logic o_machine_output_valid,
+    input  logic i_machine_output_ready
 );
     typedef enum bit [2:0] {
         INSTR_P = 0, //+ plus

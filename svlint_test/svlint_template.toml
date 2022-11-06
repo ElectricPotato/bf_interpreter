@@ -1,0 +1,115 @@
+[verilog]
+include_paths = ["src/header"]
+defines = ["DEBUG", "VAR=1"]
+
+[option]
+linter = true
+prefix_inout = "io_"
+prefix_input = "i_"
+prefix_output = "o_"
+prefix_label = "l_"
+prefix_instance = "u_"
+prefix_package = "pkg_"
+prefix_module = "mod_"
+
+
+
+# svlint-ddvc
+# Aim to comply with (draft) Nordic DDVC.
+[rules]
+
+# Module declaration.
+non_ansi_module = true
+inout_with_tri = true
+input_with_var = true
+output_with_var = true
+interface_port_with_modport = true
+
+
+# Parameter type.
+enum_with_type = true
+parameter_in_package = true
+parameter_explicit_type = true
+parameter_type_twostate = true
+localparam_explicit_type = true
+localparam_type_twostate = true
+unique0_keyword = true
+unique_keyword = true
+priority_keyword = true
+
+
+# Signal type.
+default_nettype_none = true
+wire_reg = true
+
+
+# Function declaration.
+function_same_as_system_function = true
+function_with_automatic = true
+
+
+# Generate region.
+generate_keyword_forbidden = true
+#generate_keyword_required = true
+genvar_declaration_in_loop = true
+#genvar_declaration_out_loop = true
+loop_variable_declaration = true
+generate_case_with_label = true
+generate_for_with_label = true
+generate_if_with_label = true
+
+
+# Assignment statement.
+legacy_always = true
+level_sensitive_always = true
+blocking_assignment_in_always_ff = true
+non_blocking_assignment_in_always_comb = true
+
+
+# Full-specified conditionals.
+case_default = true
+explicit_case_default = true
+explicit_if_else = true
+sequential_block_in_always_comb = true
+sequential_block_in_always_ff = true
+sequential_block_in_always_latch = true
+
+
+# begin/end keywords.
+if_with_begin = true
+for_with_begin = true
+
+
+# Naming convention.
+# TODO: Enable rules from <https://github.com/DaveMcEwan/svlint/tree/regexRules>
+prefix_inout = true
+prefix_input = true
+prefix_output = true
+prefix_instance = true
+
+prefix_interface = true
+#lowercamelcase_interface = true
+#uppercamelcase_interface = true
+
+#prefix_module = true
+#lowercamelcase_module = true
+#uppercamelcase_module = true
+
+prefix_package = true
+#lowercamelcase_package = true
+#uppercamelcase_package = true
+
+
+# Style/whitespace/formatting convention.
+style_commaleading = true
+style_indent = true
+style_keyword_0or1space = true
+style_keyword_0space = true
+style_keyword_1or2space = true
+style_keyword_1space = true
+style_keyword_construct = true
+style_keyword_datatype = true
+style_keyword_end = true
+style_keyword_maybelabel = true
+style_keyword_newline = true
+tab_character = true

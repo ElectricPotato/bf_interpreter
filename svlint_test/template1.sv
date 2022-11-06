@@ -2,6 +2,7 @@
 
 //https://github.com/dalance/svlint
 //https://github.com/dalance/svls
+//https://github.com/DaveMcEwan/svlint-rulesets
 
 module template #(
   parameter int P_ACC_SIZE = 32
